@@ -16,10 +16,11 @@ const ItemTodo = ({todo}: Props) => {
 
   const handleClickDelete = async(id: string) => { 
       const res = await deleteTodo(id);
-      if(res?.error) {
-          toast.error(res.error);
+      if(!res.success) {
+          toast.error(res.message);
+      } else {
+        toast.success("Todo deleted successfully");
       }
-      toast.success("Todo deleted successfully");
    }
 
   return (

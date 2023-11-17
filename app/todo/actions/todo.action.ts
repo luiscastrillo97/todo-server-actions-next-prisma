@@ -2,28 +2,42 @@
 
 import { prisma } from "@/libs/prismadb";
 import { revalidatePath } from "next/cache";
+import { TodoZodZshema } from "../schema/todo.zod";
+import { ZodError } from "zod";
 
-export const createTodo = async(title: string) => {  
+interface TodoCreateResponse {
+    success: boolean;
+    message: string;
+}
+
+export const createTodo = async(title: string): Promise <TodoCreateResponse> => {  
     
-    if(!title || !title.trim()) {
-        return {
-            error: "Title is required (backend)",        
-        }
-    }
-
     try {
+
+        TodoZodZshema.parse({title})
+
         await prisma.todo.create({
             data: {
                 title,
             }
         })
+
         revalidatePath("/todo")
+
         return {
             success: true,
+            message: "Todo Created (backend)"
         }
     } catch (error) {
+        if(error instanceof ZodError) {
+            return {
+                success: false,
+                message: error.issues[0].message,        
+            }
+        }
         return {
-            error: "Error creating todo (backend)",        
+            success: false,
+            message: "Error creating todo (backend)",        
         }
     }
 }
@@ -32,11 +46,13 @@ export const deleteTodo = async(id: string) => {
 
     if(!id || !id.trim()) {
         return {
-            error: "id is required (backend)",        
+            success: false,
+            message: "Id no valid",        
         }
     }
 
     try {
+
         await prisma.todo.delete({
             where: {
                 id: id,
@@ -45,10 +61,12 @@ export const deleteTodo = async(id: string) => {
         revalidatePath("/todo")
         return {
             success: true,
+            message: "Todo deleted",
         }
     } catch (error) {
         return {
-            error: "Error deleting todo (backend)",        
+            success: false,
+            message: "Error deleting todo (backend)",      
         }
     }
 }
