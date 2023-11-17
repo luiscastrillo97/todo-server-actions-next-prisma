@@ -4,13 +4,28 @@ import { prisma } from "@/libs/prismadb";
 import { revalidatePath } from "next/cache";
 import { TodoZodZshema } from "../schema/todo.zod";
 import { ZodError } from "zod";
+import { auth } from '@clerk/nextjs';
 
 interface TodoCreateResponse {
     success: boolean;
     message: string;
 }
 
-export const createTodo = async(title: string): Promise <TodoCreateResponse> => {  
+export const getUserId = () => {
+    const { userId } : { userId: string | null } = auth();
+    return userId;
+}
+
+export const createTodo = async(title: string): Promise <TodoCreateResponse> => { 
+
+    const userId = getUserId()
+
+    if(!userId) {
+        return {
+            success: false,
+            message: "userId not found",        
+        }
+    }
     
     try {
 
@@ -19,6 +34,7 @@ export const createTodo = async(title: string): Promise <TodoCreateResponse> => 
         await prisma.todo.create({
             data: {
                 title,
+                userId: userId,
             }
         })
 
